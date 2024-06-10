@@ -1,0 +1,334 @@
+> # Load libraries
+> library("tm")
+> library("SnowballC")
+> library("wordcloud")
+> library("RColorBrewer")
+> library("syuzhet")
+> library("ggplot2")
+> library("tidytext")
+> library("dplyr")
+> library("tidyr")
+> 
+> # Read the text file
+> text <- readLines("text.txt")
+Komunikat ostrzegawczy:
+W poleceniu 'readLines("text.txt")':
+  niekompletna końcowa linia znaleziona w 'text.txt'
+> TextDoc <- Corpus(VectorSource(text))
+> 
+> # Text preprocessing
+> toSpace <- content_transformer(function (x , pattern ) gsub(pattern, " ", x))
+> TextDoc <- tm_map(TextDoc, toSpace, "/")
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, toSpace, "/")':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, toSpace, "@")
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, toSpace, "@")':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, toSpace, "\\|")
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, toSpace, "\\|")':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, toSpace, "Ë†aâ€ś")
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, toSpace, "Ë†aâ\200ś")':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, toSpace, ":")
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, toSpace, ":")':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, toSpace, ";")
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, toSpace, ";")':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, toSpace, ",")
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, toSpace, ",")':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, content_transformer(tolower))
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, content_transformer(tolower))':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, removeNumbers)
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, removeNumbers)':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, removeWords, stopwords("english"))
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, removeWords, stopwords("english"))':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, removeWords, c("s", "company", "team"))
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, removeWords, c("s", "company", "team"))':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, removePunctuation)
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, removePunctuation)':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, stripWhitespace)
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, stripWhitespace)':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, stemDocument)
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, stemDocument)':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, content_transformer(function(x) gsub("mathemat", "math", x)))
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, content_transformer(function(x) gsub("mathemat", ':
+  transformation drops documents
+> TextDoc <- tm_map(TextDoc, content_transformer(function(x) gsub(" r ", " Rlanguage ", x)))
+Komunikat ostrzegawczy:
+W poleceniu 'tm_map.SimpleCorpus(TextDoc, content_transformer(function(x) gsub(" r ", ':
+  transformation drops documents
+> 
+> # Create TermDocumentMatrix
+> TextDoc_dtm <- TermDocumentMatrix(TextDoc)
+> dtm_m <- as.matrix(TextDoc_dtm)
+> dtm_v <- sort(rowSums(dtm_m), decreasing=TRUE)
+> dtm_d <- data.frame(word = names(dtm_v), freq = dtm_v)
+> 
+> # Display top words
+> head(dtm_d, 5)
+               word freq
+learn         learn  270
+machin       machin  148
+data           data  119
+model         model   90
+algorithm algorithm   82
+> 
+> # Barplot of top 20 words
+> barplot(dtm_d[1:20,]$freq, las = 2, names.arg = dtm_d[1:20,]$word,
++         col = "lightgreen",
++         main = "20 najcz. slow",
++         ylab = "Czestotliwosc slow")
+> 
+> # Wordcloud
+> set.seed(1234)
+> wordcloud(words = dtm_d$word, freq = dtm_d$freq, scale = c(5, 0.5),
++           min.freq = 1,
++           max.words = 100, random.order = FALSE,
++           rot.per = 0.40,
++           colors = brewer.pal(8, "Dark2"))
+> 
+> # Association finding
+> findAssocs(TextDoc_dtm, terms = findFreqTerms(TextDoc_dtm, lowfreq = 30), corlimit = 0.5)
+$learn
+numeric(0)
+
+$machin
+team 
+ 0.5 
+
+$data
+numeric(0)
+
+$predict
+           art         artist          award           chao      cinematch        cofound       collabor       competit          covid          crisi           cure         doctor 
+          0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58 
+       everyth            far           fine          grand           held          joint         khosla   labsresearch           lost    mediaservic    microsystem        million 
+          0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58 
+          mlas           movi        netflix           next          paint        pragmat         prefer proenvironment         realiz      rebellion         return          short 
+          0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58 
+     smartphon       springer         street            sun        thermal       unrecogn         viewer          vinod           wall          wrote          stock           team 
+          0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.58           0.57           0.57 
+          firm          prize          appli      recommend         recent      technolog 
+          0.57           0.54           0.52           0.52           0.51           0.51 
+
+$artifici
+   neuron     cross      last     layer      loos   proceed      sent  strength       sum threshold  transmit   travers   connect    signal     brain    weight    aggreg       ann 
+     0.89      0.84      0.84      0.84      0.84      0.84      0.84      0.84      0.84      0.84      0.84      0.84      0.83      0.82      0.77      0.75      0.75      0.75 
+   biolog       edg    travel      node   multipl     anoth    synaps 
+     0.75      0.75      0.59      0.58      0.53      0.52      0.52 
+
+$network
+      acycl         dag     diagram      diseas     protein     symptom     graphic    bayesian probabilist      neural    independ      direct        solv 
+       0.71        0.71        0.71        0.71        0.71        0.71        0.66        0.66        0.60        0.59        0.57        0.53        0.52 
+
+$model
+fulli 
+ 0.53 
+
+$algorithm
+numeric(0)
+
+$can
+class 
+ 0.52 
+
+$perform
+numeric(0)
+
+$comput
+numeric(0)
+
+$method
+ communiti     confus     easili       hand    overlap   reproduc    unavail   uninform    respect      evalu  discoveri        kdd       step        key   knowledg outperform 
+      0.66       0.66       0.66       0.66       0.66       0.66       0.66       0.66       0.65       0.65       0.60       0.59       0.59       0.56       0.55       0.54 
+      much       mine      focus   properti      separ    unknown      known 
+      0.54       0.53       0.53       0.53       0.53       0.53       0.52 
+
+$process
+numeric(0)
+
+$use
+numeric(0)
+
+$set
+   instanc       test     involv   techniqu     abnorm  construct      inher likelihood    remaind       seem   unbalanc     normal 
+      0.65       0.62       0.60       0.54       0.53       0.53       0.53       0.53       0.53       0.53       0.53       0.51 
+
+$system
+numeric(0)
+
+$train
+numeric(0)
+
+$featur
+autoencod  multilay    altern    examin 
+     0.54      0.54      0.53      0.53 
+
+$input
+output  desir 
+  0.67   0.60 
+
+$exampl
+numeric(0)
+
+> 
+> # Sentiment analysis
+> syuzhet_vector <- get_sentiment(text, method = "syuzhet")
+> head(syuzhet_vector)
+[1] 0.8 0.0 0.0 0.4 0.0 0.0
+> summary(syuzhet_vector)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+-3.7500  0.0000  0.0000  0.5193  0.7625 12.9000 
+> 
+> bing_vector <- get_sentiment(text, method = "bing")
+> head(bing_vector)
+[1] 0 0 0 0 0 0
+> summary(bing_vector)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ -9.000   0.000   0.000   0.032   0.000  11.000 
+> 
+> afinn_vector <- get_sentiment(text, method = "afinn")
+> head(afinn_vector)
+[1] 0 0 0 0 0 0
+> summary(afinn_vector)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+-11.000   0.000   0.000   0.204   0.000  16.000 
+> 
+> rbind(
++   sign(head(syuzhet_vector)),
++   sign(head(bing_vector)),
++   sign(head(afinn_vector))
++ )
+     [,1] [,2] [,3] [,4] [,5] [,6]
+[1,]    1    0    0    1    0    0
+[2,]    0    0    0    0    0    0
+[3,]    0    0    0    0    0    0
+> 
+> # NRC sentiment analysis
+> d <- get_nrc_sentiment(as.vector(dtm_d$word))  # This may take a long time
+> head(d, 10)
+   anger anticipation disgust fear joy sadness surprise trust negative positive
+1      0            0       0    0   0       0        0     0        0        1
+2      0            0       0    0   0       0        0     0        0        0
+3      0            0       0    0   0       0        0     0        0        0
+4      0            0       0    0   0       0        0     0        0        1
+5      0            0       0    0   0       0        0     0        0        0
+6      0            0       0    0   0       0        0     0        0        0
+7      0            0       0    0   0       0        0     0        0        0
+8      0            0       0    0   0       0        0     0        0        0
+9      0            0       0    0   0       0        0     0        0        0
+10     0            0       0    0   0       0        0     0        0        0
+> 
+> td <- data.frame(t(d))
+> td_new <- data.frame(rowSums(td[1:56]))
+> names(td_new)[1] <- "count"
+> td_new <- cbind("sentiment" = rownames(td_new), td_new)
+> rownames(td_new) <- NULL
+> td_new2 <- td_new[1:8,]
+> quickplot(sentiment, data = td_new2, weight = count, geom = "bar", fill = sentiment,
++           ylab = "count") + ggtitle("Survey sentiments")
+> 
+> barplot(
++   sort(colSums(prop.table(d[, 1:8]))),
++   horiz = TRUE,
++   cex.names = 0.7,
++   las = 1,
++   main = "Emotions in Text", xlab = "Percentage"
++ )
+> 
+> # Tidy text processing
+> fileName <- "Machine_learning_wiki.txt"
+> text <- readChar(fileName, file.info(fileName)$size)
+Błąd w poleceniu 'file(con, "rb")':nie można otworzyć połączenia
+Dodatkowo: Komunikat ostrzegawczy:
+W poleceniu 'file(con, "rb")':
+  nie można otworzyć pliku 'Machine_learning_wiki.txt': No such file or directory
+> text_df <- data_frame(line = 1, text = text)
+> 
+> tidy_text <- text_df %>% unnest_tokens(word, text)
+> 
+> data(stop_words)
+> de <- data.frame(word = c("thy", "1", "hath", "mar'd"), lexicon = "OLD_WORDS")
+> stop_words <- rbind(stop_words, de)
+> 
+> tidy_text <- tidy_text %>%
++   anti_join(stop_words)
+Joining with `by = join_by(word)`
+> 
+> tidy_text %>%
++   count(word, sort = TRUE)
+# A tibble: 2,152 x 2
+   word           n
+   <chr>      <int>
+ 1 learning     257
+ 2 machine      145
+ 3 data         120
+ 4 model         52
+ 5 algorithms    47
+ 6 training      47
+ 7 artificial    40
+ 8 set           34
+ 9 models        31
+10 ai            29
+# i 2,142 more rows
+# i Use `print(n = ...)` to see more rows
+> 
+> # Bigram processing
+> text_bigrams <- text_df %>%
++   unnest_tokens(bigram, text, token = "ngrams", n = 2)
+> 
+> bigrams_separated <- text_bigrams %>%
++   separate(bigram, c("word1", "word2"), sep = " ")
+> 
+> bigrams_filtered <- bigrams_separated %>%
++   filter(!word1 %in% stop_words$word) %>%
++   filter(!word2 %in% stop_words$word)
+> 
+> bigram_counts <- bigrams_filtered %>%
++   count(word1, word2, sort = TRUE)
+> 
+> bigrams_united <- bigrams_filtered %>%
++   unite(bigram, word1, word2, sep = " ")
+> 
+> bigrams_united
+# A tibble: 2,964 x 2
+    line bigram           
+   <dbl> <chr>            
+ 1     1 machine learning 
+ 2     1 NA NA            
+ 3     1 NA NA            
+ 4     1 NA NA            
+ 5     1 NA NA            
+ 6     1 NA NA            
+ 7     1 view history     
+ 8     1 NA NA            
+ 9     1 NA NA            
+10     1 free encyclopedia
+# i 2,954 more rows
+# i Use `print(n = ...)` to see more rows
+> 
